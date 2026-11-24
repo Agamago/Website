@@ -1,0 +1,15 @@
+---
+import Crumbs from './Crumbs.astro';
+interface Props {
+  path: { label: string; href?: string }[];
+  title: string;
+  lede?: string;
+}
+const { path, title, lede } = Astro.props;
+---
+<header class="wrap page-head">
+  <Crumbs path={path} />
+  <h1 class="display">{title}</h1>
+  {lede && <p class="lede muted">{lede}</p>}
+  <slot />
+</header>

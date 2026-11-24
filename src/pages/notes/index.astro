@@ -1,0 +1,55 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHead from '../../components/PageHead.astro';
+
+// Planned first posts; each becomes a Markdown file once written.
+const planned = [
+  'Idempotent ingestion with batched MERGE',
+  'Reading SQL Server wait statistics',
+  'Medallion layers at home scale',
+  'Building a second brain agents can read',
+  'Evaluating a RAG system before you ship it',
+];
+---
+<Base title="Notes" description="Short write-ups on data engineering and applied AI tools and patterns.">
+  <PageHead path={[{ label: 'notes' }]} title="Notes" lede="Short write-ups on tools and patterns. The first posts are on the way." />
+  <section class="wrap">
+    <ol class="queue">
+      {planned.map((t, i) => (
+        <li class="panel">
+          <span class="mono ink">note / {String(i + 1).padStart(2, '0')}</span>
+          <span class="t">{t}</span>
+          <span class="mono status off">Draft</span>
+        </li>
+      ))}
+    </ol>
+  </section>
+</Base>
+
+<style>
+  .queue {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+  }
+  .queue li {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 14px 16px;
+  }
+  .t {
+    font-stretch: 105%;
+    font-weight: 650;
+    font-size: 17px;
+  }
+  @media (max-width: 560px) {
+    .queue li {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+  }
+</style>

@@ -1,0 +1,17 @@
+---
+// Catalog-style path, e.g. joey / lab / medallion. Last segment is the current page.
+interface Props {
+  path: { label: string; href?: string }[];
+}
+const { path } = Astro.props;
+---
+<nav class="mono crumbs" aria-label="Breadcrumb">
+  <a href="/">joey</a>
+  {path.map((p, i) =>
+    i === path.length - 1 ? (
+      <span> / <b aria-current="page">{p.label}</b></span>
+    ) : (
+      <span> / <a href={p.href}>{p.label}</a></span>
+    ),
+  )}
+</nav>

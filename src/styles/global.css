@@ -1,0 +1,273 @@
+@import "tailwindcss";
+
+/*
+  Signal Grid design system (dark only), locked 2026-11-24.
+  Every color and font comes from these tokens; pages never use raw values.
+*/
+@theme {
+  --color-bg: #0a0c0f;
+  --color-surface: #11151a;
+  --color-surface-2: #181e25;
+  --color-line: #2a323c;
+  --color-ink: #e7ebee;
+  --color-muted: #8b97a3;
+  --color-accent: #cbff3c;
+  --color-on-accent: #0a0c0f;
+  --color-alert: #ff4f8b;
+  --color-data-1: #43d9ff;
+  --color-data-2: #ffb547;
+  --color-data-3: #b79cff;
+  --color-grid: rgba(139, 151, 163, 0.14);
+
+  --font-sans: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --radius-*: initial;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-bg);
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ---------- layout ---------- */
+.wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-inline: 16px;
+}
+@media (min-width: 640px) {
+  .wrap {
+    padding-inline: 24px;
+  }
+}
+
+/* ---------- type ---------- */
+.display {
+  font-family: var(--font-sans);
+  font-stretch: 125%;
+  font-weight: 850;
+  text-transform: uppercase;
+  line-height: 0.92;
+  letter-spacing: -0.01em;
+  margin: 0;
+  text-wrap: balance;
+}
+.mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.muted {
+  color: var(--color-muted);
+}
+.ink {
+  color: var(--color-accent);
+}
+.lede {
+  max-width: 62ch;
+  font-size: 18px;
+  margin: 0;
+}
+.h-section {
+  font-family: var(--font-sans);
+  font-stretch: 118%;
+  font-weight: 800;
+  font-size: 22px;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+/* ---------- components ---------- */
+.btn {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 12px 20px 12px 16px;
+  border: 0;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+}
+.btn-primary {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--color-ink);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+}
+.btn-ghost:hover {
+  box-shadow: inset 0 0 0 1px var(--color-ink);
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border: 1px solid var(--color-line);
+  color: var(--color-muted);
+}
+.tag.on {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.status {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.status::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: var(--color-accent);
+}
+.status.off::before {
+  background: var(--color-muted);
+}
+.sample {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 2px 6px;
+  border: 1px dashed var(--color-muted);
+  color: var(--color-muted);
+  text-transform: uppercase;
+}
+
+.panel {
+  position: relative;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+}
+.crop::before,
+.crop::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+.crop::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid var(--color-accent);
+  border-left: 2px solid var(--color-accent);
+}
+.crop::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid var(--color-accent);
+  border-right: 2px solid var(--color-accent);
+}
+
+.card {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  align-content: start;
+  color: inherit;
+  text-decoration: none;
+}
+a.card:hover {
+  border-color: var(--color-muted);
+}
+.card .top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.card h3 {
+  margin: 0;
+  font-stretch: 110%;
+  font-weight: 740;
+  font-size: 20px;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+.card p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 15px;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 12px;
+}
+
+.hazard {
+  height: 8px;
+  background: repeating-linear-gradient(-45deg, var(--color-accent) 0 8px, transparent 8px 16px);
+}
+
+/* ---------- page header ---------- */
+.page-head {
+  padding-block: 40px 28px;
+  display: grid;
+  gap: 14px;
+}
+.page-head h1 {
+  font-size: clamp(36px, 7vw, 84px);
+}
+.crumbs {
+  color: var(--color-muted);
+}
+.crumbs b {
+  color: var(--color-ink);
+  font-weight: 500;
+}
+.crumbs a {
+  color: inherit;
+  text-decoration: none;
+}
+.crumbs a:hover {
+  color: var(--color-ink);
+}
