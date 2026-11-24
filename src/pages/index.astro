@@ -1,0 +1,41 @@
+---
+import Base from '../layouts/Base.astro';
+
+// Placeholder landing page for Phase 1. Real sections arrive in Phase 2.
+const areas = [
+  'Data Pipelines',
+  'Database Management',
+  'Data Infrastructure',
+  'AI Engineering',
+  'Data Analysis',
+  'Machine Learning',
+];
+// Set at build time (see .env.example); the button is hidden when unset.
+const contactEmail = import.meta.env.PUBLIC_CONTACT_EMAIL;
+---
+<Base>
+  <main class="mx-auto flex min-h-screen max-w-3xl flex-col justify-center px-4 py-16 sm:px-6">
+    <p class="font-mono text-sm tracking-widest text-accent uppercase">joeysheridan.com // online</p>
+    <h1 class="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">Joey Sheridan</h1>
+    <p class="mt-3 text-lg text-muted sm:text-xl">Senior Data Engineer, Data Infrastructure &amp; Applied AI</p>
+    <p class="mt-6 max-w-2xl leading-relaxed">
+      I build production data platforms and the AI systems on top of them: pipelines, databases,
+      lakehouses, RAG, agent harnesses and second-brain tools.
+    </p>
+
+    <ul class="mt-8 flex flex-wrap gap-2" aria-label="Focus areas">
+      {areas.map((area) => (
+        <li class="rounded border border-line bg-surface px-3 py-1 font-mono text-xs text-muted">{area}</li>
+      ))}
+    </ul>
+
+    <div class="mt-10 flex flex-wrap gap-4 text-sm">
+      <a class="rounded bg-accent px-4 py-2 font-medium text-bg hover:opacity-90" href="/Joey_Sheridan_Resume.pdf">Resume (PDF)</a>
+      {contactEmail && (
+        <a class="rounded border border-line px-4 py-2 hover:border-accent" href={`mailto:${contactEmail}`}>Email</a>
+      )}
+    </div>
+
+    <p class="mt-16 font-mono text-xs text-muted">Full site under construction.</p>
+  </main>
+</Base>
