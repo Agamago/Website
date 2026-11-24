@@ -1,0 +1,61 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHead from '../../components/PageHead.astro';
+import { site } from '../../data/site';
+
+const channels = [
+  site.email && { label: 'Email', value: site.email, href: `mailto:${site.email}` },
+  { label: 'GitHub', value: site.github.replace('https://', ''), href: site.github },
+  site.linkedin && { label: 'LinkedIn', value: site.linkedin.replace('https://www.', ''), href: site.linkedin },
+  { label: 'Résumé', value: 'PDF download', href: site.resume },
+].filter(Boolean) as { label: string; value: string; href: string }[];
+---
+<Base title="Contact" description={`Contact ${site.name}.`}>
+  <PageHead path={[{ label: 'contact' }]} title="Contact" lede="Open to Data Engineer, Data Infrastructure, Software Engineer and AI Engineer roles." />
+  <section class="wrap">
+    <ul class="channels">
+      {channels.map((c) => (
+        <li>
+          <a class="panel" href={c.href}>
+            <span class="mono ink">{c.label}</span>
+            <span class="v">{c.value}</span>
+            <span class="mono muted">→</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+    <p class="mono muted loc">{site.location} · {site.coords}</p>
+  </section>
+</Base>
+
+<style>
+  .channels {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+    max-width: 720px;
+  }
+  .channels a {
+    display: grid;
+    grid-template-columns: 110px 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 18px;
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+  .channels a:hover {
+    border-color: var(--color-accent);
+  }
+  .v {
+    font-stretch: 105%;
+    font-weight: 650;
+    font-size: 18px;
+    overflow-wrap: anywhere;
+  }
+  .loc {
+    margin-top: 24px;
+  }
+</style>

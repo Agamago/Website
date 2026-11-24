@@ -1,0 +1,21 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHead from '../../components/PageHead.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import { labProjects } from '../../data/site';
+const live = labProjects.filter((p) => p.status === 'live').length;
+---
+<Base title="Lab" description="Hands-on demos and side projects: lakehouse, RAG, SQL and pipeline tools you can try in the browser.">
+  <PageHead
+    path={[{ label: 'lab' }]}
+    title="Lab"
+    lede="Hands-on demos and side projects. Every demo shows its input, the transform, and the output, with the code one click away."
+  >
+    <span class="mono muted">{live} live · {labProjects.length - live} in the build queue</span>
+  </PageHead>
+  <section class="wrap">
+    <div class="grid-cards">
+      {labProjects.map((p, i) => <ProjectCard project={p} featured={i === 0} />)}
+    </div>
+  </section>
+</Base>

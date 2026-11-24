@@ -1,0 +1,303 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHead from '../../components/PageHead.astro';
+---
+<Base title="Medallion stepper" description="Step sample weather readings through bronze, silver and gold layers and see the SQL behind each one.">
+  <PageHead
+    path={[{ label: 'lab', href: '/lab/' }, { label: 'medallion' }]}
+    title="Step through the layers"
+    lede="Pick a layer to see what the data looks like at that stage and the SQL that produced it. Readings are sample data."
+  />
+  <section class="wrap lab">
+    <div class="tabs" role="tablist" aria-label="Layer">
+      <button type="button" role="tab" aria-selected="true" aria-controls="lab-panel" data-layer="bronze">Bronze</button>
+      <button type="button" role="tab" aria-selected="false" aria-controls="lab-panel" data-layer="silver">Silver</button>
+      <button type="button" role="tab" aria-selected="false" aria-controls="lab-panel" data-layer="gold">Gold</button>
+    </div>
+    <div class="shell" id="lab-panel" role="tabpanel">
+      <div>
+        <span class="mono muted" id="lab-src">bronze.readings · 8 rows</span>
+        <div class="tbl-wrap"><table class="data" id="lab-table"></table></div>
+        <span class="note" id="lab-note"></span>
+      </div>
+      <div>
+        <span class="mono muted">Transform</span>
+        <pre class="sql" id="lab-sql"></pre>
+        <div id="lab-chart-wrap" hidden>
+          <p class="chart-title" id="lab-chart-title"></p>
+          <svg class="chart" id="lab-chart" viewBox="0 0 340 190" role="img" aria-label="Daily high temperature bar chart"></svg>
+        </div>
+      </div>
+    </div>
+    <p class="mono muted">Layer by layer: land raw → clean and type → aggregate for use.</p>
+  </section>
+</Base>
+
+<script>
+  type Bronze = { station: string; ts: string; temp: string; rh: string; issue?: 'dup' | 'fmt' | 'miss' };
+
+  const bronze: Bronze[] = [
+    { station: 'KCMA', ts: '2026-11-18T14:00Z', temp: '72F', rh: '31%' },
+    { station: 'KCMA', ts: '2026-11-18T14:00Z', temp: '72F', rh: '31%', issue: 'dup' },
+    { station: 'kcma ', ts: '2026-11-18 15:00', temp: '74 F', rh: 'null', issue: 'fmt' },
+    { station: 'KCMA', ts: '2026-11-19T14:00Z', temp: '', rh: '28%', issue: 'miss' },
+    { station: 'KCMA', ts: '2026-11-19T15:00Z', temp: '69F', rh: '35%' },
+    { station: 'KCMA', ts: '2026-11-20T14:00Z', temp: '77F', rh: '22%' },
+    { station: 'KCMA', ts: '2026-11-21T14:00Z', temp: '81F', rh: '18%' },
+    { station: 'KCMA', ts: '2026-11-22T15:00Z', temp: '75F', rh: '26%' },
+  ];
+  const silver: [string, string, number, number | null][] = [
+    ['KCMA', '2026-11-18 14:00', 72, 31],
+    ['KCMA', '2026-11-18 15:00', 74, null],
+    ['KCMA', '2026-11-19 15:00', 69, 35],
+    ['KCMA', '2026-11-20 14:00', 77, 22],
+    ['KCMA', '2026-11-21 14:00', 81, 18],
+    ['KCMA', '2026-11-22 15:00', 75, 26],
+  ];
+  const gold: [string, number][] = [
+    ['Nov 18', 74],
+    ['Nov 19', 69],
+    ['Nov 20', 77],
+    ['Nov 21', 81],
+    ['Nov 22', 75],
+  ];
+
+  const k = (s: string) => `<span class="k">${s}</span>`;
+  const sql: Record<string, string> = {
+    bronze: `${k('-- landed as-is, append only')}\n${k('COPY INTO')} bronze.readings\n${k('FROM')} 's3://lake/raw/weather/'\n${k('FILE_FORMAT')} = (TYPE = JSON);`,
+    silver: `${k('SELECT DISTINCT')}\n  UPPER(TRIM(station))            ${k('AS')} station,\n  CAST(ts ${k('AS')} TIMESTAMP)            ${k('AS')} observed_at,\n  CAST(REGEXP_REPLACE(temp, '[^0-9]', '') ${k('AS')} INT) ${k('AS')} temp_f,\n  TRY_CAST(REPLACE(rh, '%', '') ${k('AS')} INT) ${k('AS')} rh_pct\n${k('FROM')} bronze.readings\n${k('WHERE')} temp &lt;&gt; '';`,
+    gold: `${k('SELECT')}\n  CAST(observed_at ${k('AS')} DATE) ${k('AS')} day,\n  MAX(temp_f)                ${k('AS')} high_f\n${k('FROM')} silver.readings\n${k('GROUP BY')} 1\n${k('ORDER BY')} 1;`,
+  };
+
+  const $ = <T extends Element>(id: string) => document.getElementById(id) as unknown as T;
+  const tbl = $<HTMLTableElement>('lab-table');
+  const note = $<HTMLElement>('lab-note');
+  const src = $<HTMLElement>('lab-src');
+  const pre = $<HTMLElement>('lab-sql');
+  const chartWrap = $<HTMLElement>('lab-chart-wrap');
+  const svg = $<SVGSVGElement>('lab-chart');
+  const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-layer]'));
+
+  const esc = (s: string | number) =>
+    String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string);
+  const td = (v: string | number, cls = '') => `<td${cls ? ` class="${cls}"` : ''}>${esc(v)}</td>`;
+
+  function render(layer: string) {
+    let h = '';
+    if (layer === 'bronze') {
+      h = '<thead><tr><th>station</th><th>ts</th><th>temp</th><th>rh</th></tr></thead><tbody>';
+      for (const r of bronze) {
+        const fmt = r.issue === 'fmt' ? 'bad' : '';
+        h += `<tr${r.issue === 'dup' ? ' class="drop"' : ''}>` +
+          td(r.station.replace(' ', '␠'), fmt) +
+          td(r.ts, fmt) +
+          td(r.temp === '' ? '""' : r.temp, r.issue === 'fmt' || r.issue === 'miss' ? 'bad' : '') +
+          td(r.rh, r.rh === 'null' ? 'bad' : '') +
+          '</tr>';
+      }
+      src.textContent = 'bronze.readings · 8 rows';
+      note.innerHTML = '<b>4 problems</b>: a duplicate, a lowercase padded ID, mixed timestamp and unit formats, and an empty temperature.';
+    } else if (layer === 'silver') {
+      h = '<thead><tr><th>station</th><th>observed_at</th><th>temp_f</th><th>rh_pct</th></tr></thead><tbody>';
+      for (const r of silver) h += `<tr>${td(r[0])}${td(r[1])}${td(r[2], 'num')}${td(r[3] ?? 'NULL', 'num')}</tr>`;
+      src.textContent = 'silver.readings · 6 rows';
+      note.textContent = '2 rows dropped: 1 duplicate, 1 missing temperature. Types enforced.';
+    } else {
+      h = '<thead><tr><th>day</th><th class="num">high_f</th></tr></thead><tbody>';
+      for (const r of gold) h += `<tr>${td(r[0])}${td(r[1], 'num')}</tr>`;
+      src.textContent = 'gold.daily_high · 5 rows';
+      note.textContent = 'One row per day, ready for a dashboard.';
+    }
+    tbl.innerHTML = h + '</tbody>';
+    pre.innerHTML = sql[layer];
+    chartWrap.hidden = layer !== 'gold';
+    if (layer === 'gold') drawChart();
+    for (const b of tabs) {
+      const on = b.dataset.layer === layer;
+      b.setAttribute('aria-selected', String(on));
+      b.tabIndex = on ? 0 : -1;
+    }
+  }
+
+  function drawChart() {
+    const W = 340, H = 190, m = { t: 14, r: 8, b: 26, l: 30 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b, max = 90;
+    const y = (v: number) => m.t + ih - (v / max) * ih;
+    const bw = iw / gold.length;
+    const hi = gold.reduce((a, b) => (b[1] > a[1] ? b : a));
+    let s = '';
+    for (const t of [0, 30, 60, 90]) {
+      s += `<line class="gridline" x1="${m.l}" x2="${W - m.r}" y1="${y(t)}" y2="${y(t)}"/>`;
+      s += `<text class="tick" x="${m.l - 6}" y="${y(t) + 3}" text-anchor="end">${t}°</text>`;
+    }
+    gold.forEach((d, i) => {
+      const x = m.l + i * bw + bw * 0.18, w = bw * 0.64;
+      s += `<rect class="bar${d === hi ? ' hi' : ''}" x="${x}" y="${y(d[1])}" width="${w}" height="${y(0) - y(d[1])}"/>`;
+      s += `<text class="val" x="${x + w / 2}" y="${y(d[1]) - 4}" text-anchor="middle">${d[1]}</text>`;
+      s += `<text class="tick" x="${x + w / 2}" y="${H - 8}" text-anchor="middle">${d[0].toUpperCase()}</text>`;
+    });
+    s += `<line class="baseline" x1="${m.l}" x2="${W - m.r}" y1="${y(0)}" y2="${y(0)}"/>`;
+    svg.innerHTML = s;
+    $<HTMLElement>('lab-chart-title').textContent = `Hottest day: ${hi[0]} at ${hi[1]}°F`;
+  }
+
+  tabs.forEach((b, i) => {
+    b.addEventListener('click', () => render(b.dataset.layer!));
+    b.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      next.focus();
+      render(next.dataset.layer!);
+    });
+  });
+  render('bronze');
+</script>
+
+<style>
+  .lab {
+    display: grid;
+    gap: 18px;
+  }
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    border: 1px solid var(--color-line);
+    width: fit-content;
+    max-width: 100%;
+  }
+  .tabs button {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: transparent;
+    color: var(--color-muted);
+    border: 0;
+    padding: 10px 16px;
+    cursor: pointer;
+  }
+  .tabs button + button {
+    border-left: 1px solid var(--color-line);
+  }
+  .tabs button[aria-selected='true'] {
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    font-weight: 700;
+  }
+  .shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1px;
+    background: var(--color-line);
+    border: 1px solid var(--color-line);
+  }
+  @media (min-width: 900px) {
+    .shell {
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    }
+  }
+  .shell > div {
+    background: var(--color-surface);
+    min-width: 0;
+    padding: 16px;
+    display: grid;
+    gap: 12px;
+    align-content: start;
+  }
+  .tbl-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--color-line);
+  }
+  :global(table.data) {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  :global(table.data th),
+  :global(table.data td) {
+    text-align: left;
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--color-line);
+    white-space: nowrap;
+  }
+  :global(table.data th) {
+    color: var(--color-muted);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 11px;
+    background: var(--color-surface-2);
+  }
+  :global(table.data .num) {
+    text-align: right;
+  }
+  :global(table.data td.bad) {
+    color: var(--color-alert);
+    text-decoration: underline wavy;
+    text-underline-offset: 3px;
+  }
+  :global(table.data tr.drop td) {
+    color: var(--color-muted);
+    text-decoration: line-through;
+  }
+  .note {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-muted);
+  }
+  .note :global(b) {
+    color: var(--color-alert);
+    font-weight: 500;
+  }
+  pre.sql {
+    margin: 0;
+    padding: 12px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-line);
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  pre.sql :global(.k) {
+    color: var(--color-accent);
+  }
+  .chart-title {
+    font-stretch: 110%;
+    font-weight: 740;
+    font-size: 16px;
+    text-transform: uppercase;
+    margin: 0 0 8px;
+  }
+  svg.chart {
+    width: 100%;
+    max-width: 440px;
+    height: auto;
+    display: block;
+  }
+  svg.chart :global(.gridline) {
+    stroke: var(--color-grid);
+  }
+  svg.chart :global(.tick) {
+    fill: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+  svg.chart :global(.val) {
+    fill: var(--color-ink);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+  }
+  svg.chart :global(.bar) {
+    fill: var(--color-data-1);
+  }
+  svg.chart :global(.bar.hi) {
+    fill: var(--color-accent);
+  }
+  svg.chart :global(.baseline) {
+    stroke: var(--color-muted);
+  }
+</style>

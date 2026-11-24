@@ -1,41 +1,194 @@
 ---
 import Base from '../layouts/Base.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import { site, labProjects, workProjects } from '../data/site';
 
-// Placeholder landing page for Phase 1. Real sections arrive in Phase 2.
-const areas = [
-  'Data Pipelines',
-  'Database Management',
-  'Data Infrastructure',
-  'AI Engineering',
-  'Data Analysis',
-  'Machine Learning',
-];
-// Set at build time (see .env.example); the button is hidden when unset.
-const contactEmail = import.meta.env.PUBLIC_CONTACT_EMAIL;
+// Placeholder statement until Joey writes his data-philosophy headlines.
+const statement = { lead: 'Garbage in is a', hit: 'design flaw.' };
+const featured = [labProjects[0], labProjects[1], workProjects[0]];
+const areas = ['Data Pipelines', 'Database Management', 'Data Infrastructure', 'AI Engineering', 'Data Analysis', 'Machine Learning'];
 ---
 <Base>
-  <main class="mx-auto flex min-h-screen max-w-3xl flex-col justify-center px-4 py-16 sm:px-6">
-    <p class="font-mono text-sm tracking-widest text-accent uppercase">joeysheridan.com // online</p>
-    <h1 class="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">Joey Sheridan</h1>
-    <p class="mt-3 text-lg text-muted sm:text-xl">Senior Data Engineer, Data Infrastructure &amp; Applied AI</p>
-    <p class="mt-6 max-w-2xl leading-relaxed">
-      I build production data platforms and the AI systems on top of them: pipelines, databases,
-      lakehouses, RAG, agent harnesses and second-brain tools.
-    </p>
+  <section class="wrap hero">
+    <div class="copy">
+      <span class="mono muted">joey / home · philosophy 01 <span class="sample">placeholder</span></span>
+      <h1 class="display statement">{statement.lead} <span class="ink">{statement.hit}</span></h1>
+      <p class="role">{site.title} <span class="ink">/</span> Data infrastructure <span class="ink">+</span> applied AI</p>
+      <p class="say">
+        I build the pipelines, storage layers and retrieval systems that turn messy data into something people and models can trust.
+      </p>
+      <div class="row">
+        <a class="btn btn-primary" href="/lab/">Explore the lab →</a>
+        <a class="btn btn-ghost" href="/work/">See my work</a>
+      </div>
+    </div>
+    <div class="side">
+      <div class="panel crop headshot"><span class="mono muted">Headshot · 4:5</span></div>
+      <div class="panel mini">
+        <div class="mrow"><span class="muted">home-lakehouse</span><span class="status off">Coming soon</span></div>
+        <div class="bars" aria-hidden="true">
+          <span style="height:40%"></span><span style="height:55%"></span><span style="height:48%"></span><span style="height:70%"></span><span style="height:62%"></span><span style="height:85%"></span><span class="hi" style="height:100%"></span>
+        </div>
+        <div class="mrow"><span class="muted">pipeline status</span><span class="sample">sample</span></div>
+      </div>
+    </div>
+  </section>
 
-    <ul class="mt-8 flex flex-wrap gap-2" aria-label="Focus areas">
-      {areas.map((area) => (
-        <li class="rounded border border-line bg-surface px-3 py-1 font-mono text-xs text-muted">{area}</li>
+  <div class="meta-strip">
+    <div class="wrap mono muted">
+      <span>{site.location}</span><span>{site.coords}</span><span>{site.education}</span><span class="ink">Open to roles</span>
+    </div>
+  </div>
+
+  <section class="wrap block">
+    <div class="block-head"><h2 class="h-section">What I build</h2><span class="mono muted">6 areas</span></div>
+    <ul class="areas">
+      {areas.map((a, i) => (
+        <li><span class="mono ink">{String(i + 1).padStart(2, '0')}</span><b>{a}</b></li>
       ))}
     </ul>
+  </section>
 
-    <div class="mt-10 flex flex-wrap gap-4 text-sm">
-      <a class="rounded bg-accent px-4 py-2 font-medium text-bg hover:opacity-90" href="/Joey_Sheridan_Resume.pdf">Resume (PDF)</a>
-      {contactEmail && (
-        <a class="rounded border border-line px-4 py-2 hover:border-accent" href={`mailto:${contactEmail}`}>Email</a>
-      )}
+  <section class="wrap block">
+    <div class="block-head"><h2 class="h-section">Selected work</h2><a class="mono" href="/lab/">All projects →</a></div>
+    <div class="grid-cards">
+      {featured.map((p, i) => <ProjectCard project={p} featured={i === 0} />)}
     </div>
-
-    <p class="mt-16 font-mono text-xs text-muted">Full site under construction.</p>
-  </main>
+  </section>
 </Base>
+
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+    padding-block: 48px 40px;
+  }
+  @media (min-width: 900px) {
+    .hero {
+      grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+      padding-block: 72px 56px;
+    }
+  }
+  .statement {
+    margin-top: 12px;
+    font-size: clamp(42px, 8vw, 104px);
+  }
+  .role {
+    font-stretch: 112%;
+    font-weight: 650;
+    font-size: clamp(17px, 2vw, 22px);
+    text-transform: uppercase;
+    margin: 18px 0 10px;
+  }
+  .role .ink {
+    font-weight: 800;
+  }
+  .say {
+    margin: 0 0 24px;
+    max-width: 52ch;
+    color: var(--color-muted);
+  }
+  .side {
+    display: grid;
+    gap: 12px;
+    align-content: start;
+    max-width: 260px;
+  }
+  @media (min-width: 900px) {
+    .side {
+      max-width: 360px;
+    }
+  }
+  .headshot {
+    aspect-ratio: 4 / 5;
+    display: grid;
+    place-items: center;
+    background: repeating-linear-gradient(135deg, var(--color-surface) 0 12px, var(--color-surface-2) 12px 24px);
+  }
+  .mini {
+    padding: 12px 14px;
+    display: grid;
+    gap: 8px;
+  }
+  .mrow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+  .bars {
+    display: flex;
+    gap: 3px;
+    align-items: flex-end;
+    height: 34px;
+  }
+  .bars span {
+    flex: 1;
+    background: var(--color-data-1);
+    opacity: 0.8;
+  }
+  .bars span.hi {
+    background: var(--color-accent);
+    opacity: 1;
+  }
+  .meta-strip {
+    border-block: 1px solid var(--color-line);
+    background: var(--color-surface);
+  }
+  .meta-strip .wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    padding-block: 10px;
+  }
+  .block {
+    padding-top: 48px;
+  }
+  .block-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .block-head a {
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .areas {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1px;
+    background: var(--color-line);
+    border: 1px solid var(--color-line);
+  }
+  @media (min-width: 560px) {
+    .areas {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 900px) {
+    .areas {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .areas li {
+    background: var(--color-surface);
+    padding: 16px;
+    display: grid;
+    gap: 6px;
+  }
+  .areas b {
+    font-stretch: 115%;
+    font-weight: 780;
+    font-size: 17px;
+    text-transform: uppercase;
+    line-height: 1.1;
+  }
+</style>
